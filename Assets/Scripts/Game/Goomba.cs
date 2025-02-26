@@ -1,36 +1,87 @@
+using Events;
 using NaivePhysics;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Game
 {
     public class Goomba : GameBody
     {
-        [SerializeField]
-        public float        m_fMoveVelocity = 2.0f;
 
-        private Animator    m_animator;
+        [SerializeField] 
+        private float       m_fMoveVelocity = 2.0f;
+
         private bool        m_bWalkingRight;
+
+
+        public bool _attack = false;
+        public bool _block = false;
+        public bool _heal = false;
+
+        private float _arcTime = 0;
+        private float _arcDuration = 2;
+
 
         private void OnEnable()
         {
-            m_animator = GetComponent<Animator>();
             m_bWalkingRight = Random.value > 0.5f;
-        }
-
-        private void Update()
-        {
-            m_animator.SetFloat("Velocity", Mathf.Clamp(m_vVelocity.x / m_fMoveVelocity, -1.0f, 1.0f));
         }
 
         public override void TickBody()
         {
-            m_vVelocity.x = Mathf.MoveTowards(m_vVelocity.x,
+            if (GameManager.Instance._currentState == GameManager.GameState.Playing)
+            {
+                Move();     
+            }
+            if (GameManager.Instance._currentState == GameManager.GameState.Combat)
+            {
+                if (_attack)
+                {
+                    MoveAttack();
+                }
+            }
+            base.TickBody();
+        }
+
+        public void Move()
+        {
+            // move towards player
+            if (Vector3.Distance(Mario.Instance.transform.position, transform.position) <= 3)
+            {
+                Debug.Log("Move To Player!");
+                m_vVelocity.x = Mathf.MoveTowards(m_vVelocity.x,
+                                              (Mario.Instance.transform.position.x - transform.position.x) * m_fMoveVelocity,
+                                              Time.fixedDeltaTime * m_fMoveVelocity);
+            }
+            // move random direction
+            else
+            {
+                Debug.Log("Move Freely!");
+                m_vVelocity.x = Mathf.MoveTowards(m_vVelocity.x,
                                               m_fMoveVelocity * (m_bWalkingRight ? 1.0f : -1.0f),
                                               Time.fixedDeltaTime * m_fMoveVelocity);
+            }
+        }
 
-            base.TickBody();
+        public void MoveAttack()
+        {
+            // jump in arc
+            if (_arcTime < _arcDuration)
+            {
+                _arcTime += Time.fixedDeltaTime;
+
+                float t = _arcTime / _arcDuration;
+
+                Vector3 pos = Vector3.Lerp(
+                    Combat.Instance.GoombaSpawnPos.position,
+                    Mario.Instance.AttackTarget.position,
+                    t);
+
+                float arc = Mathf.Sin(t * Mathf.PI) * 2;
+
+                transform.position = new Vector3(pos.x, pos.y + arc, pos.z);
+            }
         }
 
         public override void ResolveCollision(NaivePhysics.Collision collision, float fOtherMass, Vector2 vOtherVelocity)
@@ -55,16 +106,58 @@ namespace Game
                 fDot = Vector2.Dot(vCollisionNormal, Vector2.up);
                 if (fDot < -0.7f)
                 {
-                    // do death logic
-                    mario.StartCoroutine(DeathLogic(transform));
+                    if (GameManager.Instance._currentState != GameManager.GameState.Combat)
+                    {
+                        Combat.Instance._playerTurn = true;
+                        Combat.Instance._goomba = this;
+
+                        EventHandler.Main.PushEvent(Combat.Instance);
+                    }    
+                    
+                    //// do death logic
+                    //mario.StartCoroutine(DeathLogic(transform));
                 }
                 else
                 {
-                    mario.TakeDamage();
+
+                    if (GameManager.Instance._currentState != GameManager.GameState.Combat)
+                    {
+                        Combat.Instance._playerTurn = false;
+                        Combat.Instance._goomba = this;
+
+                        EventHandler.Main.PushEvent(Combat.Instance);
+                    }
+                    else if (GameManager.Instance._currentState == GameManager.GameState.Combat)
+                    {
+                        Debug.Log("Hit!");
+                        _attack = false;
+                        mario.TakeDamage();
+                        Combat.Instance.InitializeCombat();
+                    }
                 }
             }
 
             base.ResolveCollision(collision, fOtherMass, vOtherVelocity);
+        }
+
+        public void TakeDamage()
+        {
+            m_iHP--;
+            if (m_iHP <= 0)
+            {
+                m_iHP = 0;
+                Destroy(Shape);
+                Destroy(this);
+                Destroy(gameObject);
+            }
+
+            //if (m_fInvincible < 0.0f)
+            //{
+            //    m_iHP--;
+            //    m_fInvincible = 1.0f;
+            //    UpdateHealth();
+            //    StartCoroutine(InvincibleRendering());
+            //}
         }
 
         IEnumerator DeathLogic(Transform goombaTransform)

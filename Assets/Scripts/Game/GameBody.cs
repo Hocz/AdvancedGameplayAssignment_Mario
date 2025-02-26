@@ -10,9 +10,32 @@ namespace Game
 
         private bool    m_bIsGrounded;
 
+        [SerializeField]
+        protected int m_iHP = 2;
+        [SerializeField]
+        private int m_iMaxHP = 2;
+
+        public enum CombatAction
+        {
+            Attack,
+            Block,
+            Heal
+        }
+
+        public CombatAction _currentAction;
+
+
+        [SerializeField] protected Transform _attackTarget;
+
+
         #region Properties
 
         public bool IsGrounded => m_bIsGrounded;
+
+        public int MaxHP => m_iMaxHP;
+        public int HP => m_iHP;
+
+        public Transform AttackTarget =>_attackTarget;
 
         #endregion
 

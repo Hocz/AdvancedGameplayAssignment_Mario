@@ -47,6 +47,11 @@ namespace NaivePhysics
             transform.position += (Vector3)m_vVelocity * Time.fixedDeltaTime;
         }
 
+        public void ClearVelocity()
+        {
+            m_vVelocity = Vector3.zero;
+        }
+
         public virtual void ResolveCollision(Collision collision, float fOtherMass, Vector2 vOtherVelocity)
         {
             NaiveBody bodyA = collision.A.GetComponent<NaiveBody>();

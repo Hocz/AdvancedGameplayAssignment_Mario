@@ -7,7 +7,7 @@ public class Playing : EventHandler.GameEventBehaviour
 {
     private static Playing _instance;
 
-    [SerializeField] private List<Enemy> _enemies = new List<Enemy>();
+    [SerializeField] private List<Goomba> _goombas = new List<Goomba>();
 
 
     #region Properties
@@ -26,6 +26,8 @@ public class Playing : EventHandler.GameEventBehaviour
     public override void OnBegin(bool bFirstTime)
     {
         base.OnBegin(bFirstTime);
+
+        GameManager.Instance._currentState = GameManager.GameState.Playing;
     }
 
     public override bool IsDone()
@@ -40,13 +42,14 @@ public class Playing : EventHandler.GameEventBehaviour
         // pause
         if (Input.GetKeyDown(KeyCode.P) || Input.GetKeyDown(KeyCode.Escape))
         {
-            PauseMenu pm = FindObjectOfType<PauseMenu>();
-            EventHandler.Main.PushEvent(pm);
+            EventHandler.Main.PushEvent(PauseMenu.Instance);
         }
 
-        foreach (Enemy enemy in _enemies)
+        Mario.Instance.Move();
+
+        foreach (Goomba goomba in _goombas)
         {
-            enemy.Move();
+            
         }
     }
 }
