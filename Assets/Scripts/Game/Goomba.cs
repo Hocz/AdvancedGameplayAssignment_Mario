@@ -14,13 +14,7 @@ namespace Game
 
         private bool        m_bWalkingRight;
 
-
-        public bool _attack = false;
-        public bool _block = false;
-        public bool _heal = false;
-
-        private float _arcTime = 0;
-        private float _arcDuration = 2;
+        private float       m_fInvincible = -1.0f;
 
 
         private void OnEnable()
@@ -32,14 +26,9 @@ namespace Game
         {
             if (GameManager.Instance._currentState == GameManager.GameState.Playing)
             {
-                Move();     
-            }
-            if (GameManager.Instance._currentState == GameManager.GameState.Combat)
-            {
-                if (_attack)
-                {
-                    MoveAttack();
-                }
+                Move();
+
+                m_fInvincible -= Time.fixedDeltaTime;
             }
             base.TickBody();
         }
@@ -61,26 +50,6 @@ namespace Game
                 m_vVelocity.x = Mathf.MoveTowards(m_vVelocity.x,
                                               m_fMoveVelocity * (m_bWalkingRight ? 1.0f : -1.0f),
                                               Time.fixedDeltaTime * m_fMoveVelocity);
-            }
-        }
-
-        public void MoveAttack()
-        {
-            // jump in arc
-            if (_arcTime < _arcDuration)
-            {
-                _arcTime += Time.fixedDeltaTime;
-
-                float t = _arcTime / _arcDuration;
-
-                Vector3 pos = Vector3.Lerp(
-                    Combat.Instance.GoombaSpawnPos.position,
-                    Mario.Instance.AttackTarget.position,
-                    t);
-
-                float arc = Mathf.Sin(t * Mathf.PI) * 2;
-
-                transform.position = new Vector3(pos.x, pos.y + arc, pos.z);
             }
         }
 
@@ -112,10 +81,9 @@ namespace Game
                         Combat.Instance._goomba = this;
 
                         EventHandler.Main.PushEvent(Combat.Instance);
-                    }    
-                    
-                    //// do death logic
-                    //mario.StartCoroutine(DeathLogic(transform));
+                    }
+
+                    TakeDamage();
                 }
                 else
                 {
@@ -130,9 +98,8 @@ namespace Game
                     else if (GameManager.Instance._currentState == GameManager.GameState.Combat)
                     {
                         Debug.Log("Hit!");
-                        _attack = false;
-                        mario.TakeDamage();
-                        Combat.Instance.InitializeCombat();
+
+                        mario.TakeDamage();                      
                     }
                 }
             }
@@ -142,7 +109,12 @@ namespace Game
 
         public void TakeDamage()
         {
-            m_iHP--;
+            if (m_fInvincible < 0.0f)
+            {
+                m_iHP--;
+                m_fInvincible = 1.0f;
+            }
+
             if (m_iHP <= 0)
             {
                 m_iHP = 0;
@@ -151,13 +123,7 @@ namespace Game
                 Destroy(gameObject);
             }
 
-            //if (m_fInvincible < 0.0f)
-            //{
-            //    m_iHP--;
-            //    m_fInvincible = 1.0f;
-            //    UpdateHealth();
-            //    StartCoroutine(InvincibleRendering());
-            //}
+
         }
 
         IEnumerator DeathLogic(Transform goombaTransform)

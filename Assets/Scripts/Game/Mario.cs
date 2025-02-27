@@ -71,6 +71,7 @@ namespace Game
                 Move();
                 
                 m_fInvincible -= Time.fixedDeltaTime;
+                
             }
             base.TickBody();
 
@@ -78,19 +79,17 @@ namespace Game
 
         public void TakeDamage()
         {
+            if (m_fInvincible < 0.0f)
+            {
+                m_iHP--;
+                m_fInvincible = 1.0f;
+            }
+
             if (m_iHP <=0)
             {
                 m_iHP = 0;
                 //game over
             }
-            
-            //if (m_fInvincible < 0.0f)
-            //{
-            //    m_iHP--;
-            //    m_fInvincible = 1.0f;
-            //    UpdateHealth();
-            //    StartCoroutine(InvincibleRendering());
-            //}
         }
 
 

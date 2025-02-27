@@ -17,6 +17,7 @@ namespace Game
 
         public enum CombatAction
         {
+            None,
             Attack,
             Block,
             Heal
