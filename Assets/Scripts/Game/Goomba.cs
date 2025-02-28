@@ -2,7 +2,6 @@ using Events;
 using NaivePhysics;
 using System.Collections;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Game
 {
@@ -20,17 +19,22 @@ namespace Game
         private void OnEnable()
         {
             m_bWalkingRight = Random.value > 0.5f;
+            m_iMaxHP = 2;
+            m_iHP = m_iMaxHP;
         }
 
         public override void TickBody()
         {
-            if (GameManager.Instance._currentState == GameManager.GameState.Playing)
+            if (GameManager.Instance._currentState != GameManager.GameState.Paused)
             {
-                Move();
-
+                if (GameManager.Instance._currentState == GameManager.GameState.Playing)
+                {
+                    Move();
+                }
                 m_fInvincible -= Time.fixedDeltaTime;
+
+                base.TickBody();
             }
-            base.TickBody();
         }
 
         public void Move()
@@ -75,31 +79,35 @@ namespace Game
                 fDot = Vector2.Dot(vCollisionNormal, Vector2.up);
                 if (fDot < -0.7f)
                 {
-                    if (GameManager.Instance._currentState != GameManager.GameState.Combat)
+                    if (GameManager.Instance._currentState == GameManager.GameState.Playing)
                     {
                         Combat.Instance._playerTurn = true;
                         Combat.Instance._goomba = this;
 
+                        Playing.Instance._marioLastPosition = Mario.Instance.transform.position;
+                        Playing.Instance._goombaLastPosition = transform.position;
+
+                        Debug.Log("Enter Combat!");
+
+                        GameManager.Instance._currentState = GameManager.GameState.Combat;
                         EventHandler.Main.PushEvent(Combat.Instance);
                     }
-
-                    TakeDamage();
                 }
                 else
                 {
 
-                    if (GameManager.Instance._currentState != GameManager.GameState.Combat)
+                    if (GameManager.Instance._currentState == GameManager.GameState.Playing)
                     {
                         Combat.Instance._playerTurn = false;
                         Combat.Instance._goomba = this;
 
-                        EventHandler.Main.PushEvent(Combat.Instance);
-                    }
-                    else if (GameManager.Instance._currentState == GameManager.GameState.Combat)
-                    {
-                        Debug.Log("Hit!");
+                        Playing.Instance._marioLastPosition = Mario.Instance.transform.position;
+                        Playing.Instance._goombaLastPosition = transform.position;
 
-                        mario.TakeDamage();                      
+                        Debug.Log("Enter Combat!");
+
+                        GameManager.Instance._currentState = GameManager.GameState.Combat;
+                        EventHandler.Main.PushEvent(Combat.Instance);
                     }
                 }
             }
@@ -125,19 +133,12 @@ namespace Game
 
 
         }
-
-        IEnumerator DeathLogic(Transform goombaTransform)
+        public void Heal()
         {
-            Destroy(Shape);
-            Destroy(this);
-
-            for (float f = 0.0f; f < 1.0f; f += Time.deltaTime)
+            if (m_iHP <= m_iMaxHP && m_iHP != 0)
             {
-                goombaTransform.localScale = new Vector3(1.0f, 1.0f - f, 1.0f);
-                yield return null;
+                m_iHP++;
             }
-
-            Destroy(goombaTransform.gameObject);
         }
     }
 }

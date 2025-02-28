@@ -1,15 +1,21 @@
-using System;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
     private static GameManager _instance;
 
+    public GameObject _gameOverScreen;
+    public GameObject _gameWonScreen;
+
+    public bool _isGameOver = false;
+
     public enum GameState
     {
         Playing,
         Combat,
-        Paused
+        Paused,
+        GameOver,
+        GameWon
     }
 
     public GameState _currentState;
@@ -23,8 +29,12 @@ public class GameManager : MonoBehaviour
 
     private void OnEnable()
     {
-        DontDestroyOnLoad(gameObject);
         _instance = this;
+
+        _gameOverScreen.SetActive(false);
+        _gameWonScreen.SetActive(false);
+
+        _isGameOver = false;
     }
 
 }

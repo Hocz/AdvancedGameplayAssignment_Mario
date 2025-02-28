@@ -98,6 +98,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_vSize: {x: 0.5, y: 0.5}
+  _coin: {fileID: 5753655135480346771}
 --- !u!1 &5753655135480346771
 GameObject:
   m_ObjectHideFlags: 0

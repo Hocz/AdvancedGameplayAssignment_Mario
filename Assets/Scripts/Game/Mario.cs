@@ -1,5 +1,7 @@
-using System.Collections;
 using UnityEngine;
+using Events;
+using UnityEngine.SceneManagement;
+using NaivePhysics;
 
 namespace Game
 {
@@ -18,7 +20,6 @@ namespace Game
         private static Mario    sm_instance;
 
 
-
         #region Properties
 
         public static Mario Instance => sm_instance;
@@ -34,24 +35,25 @@ namespace Game
         {
             // get player input
             float fDirection = 0.0f;
-            if (Input.GetKey(KeyCode.D))
+            if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
             {
                 m_bFaceRight = true;
                 fDirection = 1.0f;
             }
 
-            if (Input.GetKey(KeyCode.A))
+            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
             {
                 m_bFaceRight = false;
                 fDirection = -1.0f;
             }
 
             // jump
-            if (Input.GetKeyDown(KeyCode.Space))
+            if ((Input.GetKey(KeyCode.Space) || Input.GetKey(KeyCode.UpArrow)) && !_isJumping)
             {
                 // is grounded?
                 if (IsGrounded)
                 {
+                    _isJumping = true;
                     m_vVelocity.y = m_fJumpVelocity;
                 }
             }
@@ -66,15 +68,35 @@ namespace Game
 
         public override void TickBody()
         {
-            if (GameManager.Instance._currentState == GameManager.GameState.Playing)
+            if (GameManager.Instance._currentState != GameManager.GameState.Paused)
             {
-                Move();
-                
-                m_fInvincible -= Time.fixedDeltaTime;
-                
-            }
-            base.TickBody();
+                if (GameManager.Instance._currentState == GameManager.GameState.Playing)
+                {
+                    Move();
+                }
 
+                m_fInvincible -= Time.fixedDeltaTime;
+
+                base.TickBody();
+            }
+        }
+
+        public override void ResolveCollision(NaivePhysics.Collision collision, float fOtherMass, Vector2 vOtherVelocity)
+        {
+            base.ResolveCollision(collision, fOtherMass, vOtherVelocity);
+
+            NaiveEngine.Shape other = collision.GetOther(Shape);
+            Goal goal = other.GetComponent<Goal>();
+            if (goal != null)
+            {
+                Debug.Log("Player Won!");
+                GameManager.Instance._currentState = GameManager.GameState.GameWon;
+
+                if (!GameManager.Instance._isGameOver)
+                {
+                    Playing.Instance.SetGameWon();
+                }
+            }
         }
 
         public void TakeDamage()
@@ -88,28 +110,17 @@ namespace Game
             if (m_iHP <=0)
             {
                 m_iHP = 0;
+                
                 //game over
+                GameManager.Instance._currentState = GameManager.GameState.GameOver;
+                GameManager.Instance._isGameOver = true;
             }
         }
-
-
-        IEnumerator InvincibleRendering()
+        public void Heal()
         {
-            // flash renderers
-            MeshRenderer[] renderers = GetComponentsInChildren<MeshRenderer>();
-            while (m_fInvincible > 0.0f)
+            if (m_iHP <= m_iMaxHP && m_iHP != 0)
             {
-                foreach (MeshRenderer mr in renderers)
-                {
-                    mr.enabled = !mr.enabled;
-                }
-                yield return new WaitForSeconds(0.33f);
-            }
-
-            // restore renderers
-            foreach (MeshRenderer mr in renderers)
-            {
-                mr.enabled = true;
+                m_iHP++;
             }
         }
     }

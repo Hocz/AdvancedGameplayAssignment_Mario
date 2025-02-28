@@ -12,10 +12,29 @@ namespace Game
 
         private Vector2     m_vPrediction = Vector2.zero;
 
+        private bool _hasSavedCameraPos = false;
+
         void Update()
         {
-            if (GameManager.Instance._currentState != GameManager.GameState.Combat)
+            if (GameManager.Instance._currentState == GameManager.GameState.Combat)
             {
+                if (!_hasSavedCameraPos)
+                {
+                    Playing.Instance._cameraLastPosition = transform.position;
+                }
+                _hasSavedCameraPos = true;
+
+                transform.position = Combat.Instance.CameraPos.position;
+            }
+            else
+            {
+                if (GameManager.Instance._currentState == GameManager.GameState.Paused) return;
+
+                if (_hasSavedCameraPos)
+                {
+                    transform.position = Playing.Instance._cameraLastPosition;
+                }
+                _hasSavedCameraPos = false;
                 // move camera to focus on Mario
                 if (Mario.Instance != null)
                 {
@@ -30,10 +49,6 @@ namespace Game
                     vTarget.z = transform.position.z;
                     transform.position += (vTarget - transform.position) * Time.deltaTime * 10.0f;
                 }
-            }
-            else
-            {
-                transform.position = Combat.Instance.CameraPos.position;
             }
         }
     }

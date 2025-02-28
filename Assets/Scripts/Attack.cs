@@ -13,13 +13,23 @@ public class Attack : EventHandler.GameEvent
     {
         base.OnBegin(bFirstTime);
 
+        if (bFirstTime && !Combat.Instance._playerTurn)
+        {
+            EventHandler.Main.PushEvent(new Wait());
+        }
+
         _isDone = false;
+
+        if (GameManager.Instance._currentState == GameManager.GameState.GameOver)
+        {
+            _isDone = true;
+        }
     }
 
     public override void OnUpdate()
     {
         base.OnUpdate();
-        
+
         if (!Combat.Instance._playerTurn)
         {
             // jump in arc
@@ -40,6 +50,17 @@ public class Attack : EventHandler.GameEvent
             }
             else
             {
+                if (Random.value <= Mario.Instance._blockChance && Mario.Instance._isBlocking)
+                {
+                    // successfully blocked attack
+                    Debug.Log("Mario blocked attack!");
+                }
+                else
+                {
+                    Debug.Log("Mario Failed block!");
+
+                    Mario.Instance.TakeDamage();
+                }
                 _isDone = true;
             }
         }
@@ -64,6 +85,17 @@ public class Attack : EventHandler.GameEvent
             }
             else
             {
+                if (Random.value <= Combat.Instance._goomba._blockChance && Combat.Instance._goomba._isBlocking)
+                {
+                    // successfully blocked attack
+                    Debug.Log("Goomba blocked attack!");
+                }
+                else
+                {
+                    Debug.Log("Goomba Failed block!");
+
+                    Combat.Instance._goomba.TakeDamage();
+                }
                 _isDone = true;
             }
             
@@ -75,8 +107,16 @@ public class Attack : EventHandler.GameEvent
     {
         if (_isDone)
         {
-            Combat.Instance._playerTurn = !Combat.Instance._playerTurn;
-            return true;
+            if (Combat.Instance._goomba.HP > 0 && Mario.Instance.HP > 0)
+            {
+                Combat.Instance._playerTurn = !Combat.Instance._playerTurn;
+                return true;
+            }
+            else
+            {
+                return true;
+            }
+            
         }
         return false;
     }

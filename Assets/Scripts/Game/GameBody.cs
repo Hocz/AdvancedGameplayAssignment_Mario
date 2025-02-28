@@ -10,10 +10,13 @@ namespace Game
 
         private bool    m_bIsGrounded;
 
-        [SerializeField]
-        protected int m_iHP = 2;
-        [SerializeField]
-        private int m_iMaxHP = 2;
+        protected int m_iHP = 3;
+
+        protected int m_iMaxHP = 3;
+
+        public float _blockChance = 0;
+        public bool _isBlocking = false;
+        protected bool _isJumping = false;
 
         public enum CombatAction
         {
@@ -54,6 +57,7 @@ namespace Game
             if (fDot > 0.75f)
             {
                 m_bIsGrounded = true;
+                _isJumping = false;
             }
 
             // should we do a step?

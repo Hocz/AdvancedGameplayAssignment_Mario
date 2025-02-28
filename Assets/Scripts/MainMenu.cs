@@ -6,7 +6,7 @@ public class MainMenu : EventHandler.GameEventBehaviour
 {
     private void OnEnable()
     {
-        EventHandler.Main.PushEvent(this);
+        EventHandler.Main.PushEvent(this);    
     }
 
     public override bool IsDone()
